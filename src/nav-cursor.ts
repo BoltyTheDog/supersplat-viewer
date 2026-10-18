@@ -2,7 +2,6 @@ import { PROJECTION_ORTHOGRAPHIC, Vec3 } from 'playcanvas';
 import type { AppBase, Entity, EventHandler } from 'playcanvas';
 
 import type { Collision } from './collision';
-import type { ScenePicker } from './picker';
 import type { State } from './types';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -158,8 +157,7 @@ class CursorRing {
         this.path.setAttribute('fill', 'white');
         this.path.setAttribute('fill-opacity', '0.6');
         this.path.setAttribute('fill-rule', 'evenodd');
-        this.path.setAttribute('stroke', 'rgba(0, 0, 0, 0.35)');
-        this.path.setAttribute('stroke-width', '1');
+        this.path.setAttribute('stroke', 'none');
         this.path.style.display = 'none';
         svg.appendChild(this.path);
     }
@@ -269,8 +267,6 @@ class NavCursor {
     // pick path needs updating here.
     collision: Collision | null;
 
-    picker: ScenePicker | null;
-
     private canvas: HTMLCanvasElement;
 
     private state: State;
@@ -279,8 +275,9 @@ class NavCursor {
 
     private onPrerender: () => void;
 
-    // True when the hover ring should track the pointer. Active with mouse navigation
-    // (not gaming controls / touch).
+    // True when the hover ring should track the pointer. Only walk mode
+    // (with mouse navigation, not gaming controls) shows the hover ring;
+    // fly/orbit only show the target ring on click.
     private hoverActive = false;
 
     private navigating = false;
@@ -295,14 +292,6 @@ class NavCursor {
 
     private onPointerLeave: () => void;
 
-    private pickRequestId = 0;
-
-    private pickPending = false;
-
-    private lastPointerX = 0;
-
-    private lastPointerY = 0;
-
     private readonly collisionTarget: CursorTarget = {
         position: new Vec3(),
         normal: new Vec3()
@@ -312,14 +301,12 @@ class NavCursor {
         app: AppBase,
         camera: Entity,
         collision: Collision | null,
-        picker: ScenePicker | null,
         events: EventHandler,
         state: State,
         reticle: boolean
     ) {
         this.camera = camera;
         this.collision = collision;
-        this.picker = picker;
         this.canvas = app.graphicsDevice.canvas as HTMLCanvasElement;
         this.state = state;
         this.app = app;
@@ -350,7 +337,6 @@ class NavCursor {
 
         this.onPointerMove = (e: PointerEvent) => {
             if (e.pointerType === 'touch' || e.buttons) {
-                this.pickRequestId++;
                 this.hoverRing.hide();
                 return;
             }
@@ -358,7 +344,6 @@ class NavCursor {
         };
 
         this.onPointerLeave = () => {
-            this.pickRequestId++;
             this.hoverRing.hide();
         };
 
@@ -376,10 +361,10 @@ class NavCursor {
                 this.svg.style.display = '';
             }
 
-            // Hover ring active on desktop with mouse navigation
-            this.hoverActive = state.inputMode === 'desktop' && !state.gamingControls;
+            // Hover ring only in walk mode with mouse navigation. Gaming
+            // controls use pointer-lock and don't need a hover preview.
+            this.hoverActive = state.cameraMode === 'walk' && !state.gamingControls;
             this.hoverRing.hide();
-            this.pickRequestId++;
             if (this.targetMode && this.targetMode !== state.cameraMode) {
                 this.navigating = false;
                 this.clearTarget();
@@ -496,57 +481,12 @@ class NavCursor {
         }
 
         const target = this.pickCollision(offsetX, offsetY);
-        if (target) {
-            this.pickRequestId++;
-            this.hoverRing.render(target.position, target.normal, this.screenPixelsForRing());
-            return;
-        }
-
-        if (!this.picker) {
+        if (!target) {
             this.hoverRing.hide();
             return;
         }
 
-        this.lastPointerX = offsetX;
-        this.lastPointerY = offsetY;
-
-        if (this.pickPending) {
-            return;
-        }
-
-        this.requestPicker(offsetX, offsetY);
-    }
-
-    private async requestPicker(offsetX: number, offsetY: number) {
-        const requestId = ++this.pickRequestId;
-        this.pickPending = true;
-
-        try {
-            const width = this.canvas.clientWidth || 1;
-            const height = this.canvas.clientHeight || 1;
-            const surface = await this.picker!.pickSurface(offsetX / width, offsetY / height);
-
-            if (requestId !== this.pickRequestId || !this.hoverActive || this.navigating) {
-                return;
-            }
-
-            if (surface) {
-                this.hoverRing.render(surface.position, surface.normal, this.screenPixelsForRing());
-            } else {
-                this.hoverRing.hide();
-            }
-        } catch {
-            this.hoverRing.hide();
-        } finally {
-            this.pickPending = false;
-            if (
-                this.hoverActive &&
-                !this.navigating &&
-                (Math.abs(this.lastPointerX - offsetX) > 2 || Math.abs(this.lastPointerY - offsetY) > 2)
-            ) {
-                this.requestPicker(this.lastPointerX, this.lastPointerY);
-            }
-        }
+        this.hoverRing.render(target.position, target.normal, this.screenPixelsForRing());
     }
 
     private updateTarget() {
@@ -565,7 +505,6 @@ class NavCursor {
     }
 
     destroy() {
-        this.pickRequestId++;
         this.app.off('prerender', this.onPrerender);
         this.canvas.removeEventListener('pointermove', this.onPointerMove);
         this.canvas.removeEventListener('pointerleave', this.onPointerLeave);

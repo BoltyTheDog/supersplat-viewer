@@ -157,9 +157,6 @@
                                         .then((r) => (r.ok ? r.json() : null))
                                         .catch(() => null);
                                 }
-                                if (entry.collisionUrl) {
-                                    window.sse.options.collisionUrl = entry.collisionUrl;
-                                }
                                 document.title = `${entry.title} | SuperSplat Viewer`;
                             }
                         }
