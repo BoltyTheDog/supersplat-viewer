@@ -11,6 +11,7 @@ type GalleryEntry = {
     url: string;
     thumbnail?: string;
     settingsUrl?: string;
+    collisionUrl?: string;
     bytes: number;
     splatCount?: number;
 };
@@ -93,6 +94,7 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
             url.searchParams.set('splat', entry.id);
             url.searchParams.set('content', entry.url);
             if (entry.settingsUrl) url.searchParams.set('settings', entry.settingsUrl);
+            if (entry.collisionUrl) url.searchParams.set('collision', entry.collisionUrl);
             card.href = url.href;
             const preview = element('div', 'gallery-preview');
             preview.append(element('span', 'gallery-placeholder', '◈'));

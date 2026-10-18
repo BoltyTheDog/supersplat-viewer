@@ -25,7 +25,9 @@ const mime = {
     '.ply': 'application/octet-stream',
     '.sog': 'application/octet-stream',
     '.splat': 'application/octet-stream',
-    '.ksplat': 'application/octet-stream'
+    '.ksplat': 'application/octet-stream',
+    '.glb': 'model/gltf-binary',
+    '.bin': 'application/octet-stream'
 };
 
 const inside = (base, path) => {
@@ -114,6 +116,13 @@ export async function listSplats(base) {
                 settingsUrl = url('settings.json');
             }
 
+            let collisionUrl;
+            const collisionFile = files.find(f => f.isFile() && /^(collision\.glb|.*\.collision\.glb|collision\.voxel\.json|.*\.voxel\.json)$/i.test(f.name));
+            if (collisionFile) {
+                await safePath(folder, collisionFile.name);
+                collisionUrl = url(collisionFile.name);
+            }
+
             let tags = Array.isArray(metadata.tags) ? metadata.tags.filter(t => typeof t === 'string') : [];
             if (!tags.length) {
                 if (file.toLowerCase() === 'lod-meta.json') {
@@ -137,6 +146,7 @@ export async function listSplats(base) {
                 url: url(file),
                 thumbnail,
                 settingsUrl,
+                collisionUrl,
                 bytes: totalBytes,
                 splatCount
             };
