@@ -166,7 +166,7 @@
                 }
 
                 const { options, settings } = window.sse;
-                const viewer = await createViewer({ container: document.body, settings, ...options });
+                createViewer({ container: document.body, settings, ...options });
 
                 ensureGalleryStyles();
                 const nav = document.createElement('div');
@@ -178,17 +178,6 @@
                 back.title = 'Return to the splat collection';
                 back.addEventListener('pointerdown', (e) => e.stopPropagation());
                 nav.append(back);
-
-                const frameBtn = document.createElement('button');
-                frameBtn.className = 'gallery-button';
-                frameBtn.textContent = '⛶ Frame';
-                frameBtn.title = 'Center and frame scene (F)';
-                frameBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-                frameBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    viewer.frameScene();
-                });
-                nav.append(frameBtn);
 
                 const logout = logoutForm();
                 if (logout) nav.append(logout);
