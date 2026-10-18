@@ -68,24 +68,77 @@ export async function listSplats(base) {
             if (!localFile(file) || !splatFiles.includes(file)) throw new Error('No valid splat file');
             const info = await stat(await safePath(folder, file));
             const url = name => `/splats/${encodeURIComponent(dir.name)}/${encodeURIComponent(name)}`;
-            let thumbnail;
-            if (localFile(metadata.thumbnail) && /\.(png|jpe?g|webp)$/i.test(metadata.thumbnail)) {
-                await safePath(folder, metadata.thumbnail);
-                thumbnail = url(metadata.thumbnail);
+            let splatCount = 0;
+            let totalBytes = info.size;
+
+            if (file.toLowerCase() === 'lod-meta.json') {
+                try {
+                    const lodJson = JSON.parse(await readFile(await safePath(folder, 'lod-meta.json'), 'utf8'));
+                    if (typeof lodJson.count === 'number') {
+                        splatCount = lodJson.count;
+                    }
+                    for (const f of files) {
+                        if (f.isDirectory() && /^\d+_\d+$/.test(f.name)) {
+                            const chunkDir = resolve(folder, f.name);
+                            const chunkFiles = await readdir(chunkDir, { withFileTypes: true });
+                            for (const cf of chunkFiles) {
+                                if (cf.isFile()) {
+                                    const cStat = await stat(resolve(chunkDir, cf.name));
+                                    totalBytes += cStat.size;
+                                }
+                            }
+                        }
+                    }
+                } catch {
+                    // ignore
+                }
             }
+
+            let thumbnail;
+            const explicitThumb = metadata.thumbnail;
+            if (localFile(explicitThumb) && /\.(png|jpe?g|webp)$/i.test(explicitThumb)) {
+                await safePath(folder, explicitThumb);
+                thumbnail = url(explicitThumb);
+            } else {
+                const autoThumb = files.find(f => f.isFile() && /^(preview|thumbnail|thumb|cover|poster)\.(png|jpe?g|webp)$/i.test(f.name))
+                    ?? files.find(f => f.isFile() && /\.(png|jpe?g|webp)$/i.test(f.name) && !/means|quats|scales|sh\d/i.test(f.name));
+                if (autoThumb) {
+                    await safePath(folder, autoThumb.name);
+                    thumbnail = url(autoThumb.name);
+                }
+            }
+
             let settingsUrl;
             if (files.some(f => f.isFile() && f.name.toLowerCase() === 'settings.json')) {
                 await safePath(folder, 'settings.json');
                 settingsUrl = url('settings.json');
             }
+
+            let tags = Array.isArray(metadata.tags) ? metadata.tags.filter(t => typeof t === 'string') : [];
+            if (!tags.length) {
+                if (file.toLowerCase() === 'lod-meta.json') {
+                    tags.push('Streamed LOD');
+                } else if (/\.compressed\.ply$/i.test(file)) {
+                    tags.push('Compressed PLY');
+                } else if (/\.ply$/i.test(file)) {
+                    tags.push('PLY');
+                } else if (/\.sog$/i.test(file)) {
+                    tags.push('SOG');
+                }
+            }
+
             return {
                 id: dir.name,
                 title: typeof metadata.title === 'string' ? metadata.title : dir.name,
                 description: typeof metadata.description === 'string' ? metadata.description : '',
                 author: typeof metadata.author === 'string' ? metadata.author : '',
                 date: typeof metadata.date === 'string' ? metadata.date : '',
-                tags: Array.isArray(metadata.tags) ? metadata.tags.filter(t => typeof t === 'string') : [],
-                url: url(file), thumbnail, settingsUrl, bytes: info.size
+                tags,
+                url: url(file),
+                thumbnail,
+                settingsUrl,
+                bytes: totalBytes,
+                splatCount
             };
         } catch (err) {
             console.warn(`Skipping splat ${dir.name}: ${err.message}`);
@@ -108,7 +161,7 @@ const defaultSettingsJson = JSON.stringify({
         fringing: { enabled: false, intensity: 0.5 }
     },
     animTracks: [],
-    cameras: [{ initial: { position: [0, 2, 0], target: [2, 2, 0], fov: 85 } }],
+    cameras: [],
     annotations: [],
     startMode: 'default'
 });

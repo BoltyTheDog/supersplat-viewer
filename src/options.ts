@@ -62,6 +62,8 @@ type ViewerFlags = {
     fullload?: boolean;
     /** Stream splats progressively from the center outward. Defaults to true. */
     progressiveLoad?: boolean;
+    /** Automatically frame the scene's bounding box on load. Defaults to true. */
+    autoFrame?: boolean;
     /** Render with antialiasing. */
     aa?: boolean;
     /**

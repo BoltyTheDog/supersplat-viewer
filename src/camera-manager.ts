@@ -107,9 +107,18 @@ class CameraManager {
         const camera0 = settings.cameras[0]?.initial;
         const defaultFov = camera0?.fov ?? DEFAULT_CAMERA_FOV;
         const frameCamera = createFrameCamera(bbox, defaultFov);
-        const resetCamera = camera0
-            ? createCamera(new Vec3(camera0.position), new Vec3(camera0.target), camera0.fov)
-            : frameCamera;
+        const isGenericDefaultCamera =
+            camera0 &&
+            camera0.position[0] === 0 &&
+            camera0.position[1] === 2 &&
+            camera0.position[2] === 0 &&
+            camera0.target[0] === 2 &&
+            camera0.target[1] === 2 &&
+            camera0.target[2] === 0;
+        const resetCamera =
+            camera0 && !isGenericDefaultCamera && global.config.autoFrame === false
+                ? createCamera(new Vec3(camera0.position), new Vec3(camera0.target), camera0.fov)
+                : frameCamera;
 
         const getAnimTrack = (initial: Camera, isObjectExperience: boolean) => {
             const { animTracks } = settings;

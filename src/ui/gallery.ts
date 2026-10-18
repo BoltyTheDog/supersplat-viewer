@@ -12,6 +12,7 @@ type GalleryEntry = {
     thumbnail?: string;
     settingsUrl?: string;
     bytes: number;
+    splatCount?: number;
 };
 
 const element = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string) => {
@@ -112,7 +113,13 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
                 element('h2', '', entry.title),
                 element('p', 'gallery-description', entry.description || 'Gaussian splat')
             );
-            const meta = [entry.author, entry.date, `${(entry.bytes / (1024 * 1024)).toFixed(1)} MB`]
+            const splatCountStr = entry.splatCount
+                ? `${(entry.splatCount / 1_000_000).toFixed(1)}M splats`
+                : null;
+            const bytesStr = entry.bytes > 0
+                ? `${(entry.bytes / (1024 * 1024)).toFixed(1)} MB`
+                : null;
+            const meta = [entry.author, entry.date, splatCountStr, bytesStr]
                 .filter(Boolean)
                 .join(' · ');
             details.append(element('p', 'gallery-meta', meta));

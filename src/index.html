@@ -102,6 +102,7 @@
                 heatmap: url.searchParams.has('heatmap'),
                 fullload: url.searchParams.has('fullload'),
                 progressiveLoad: !url.searchParams.has('noprogresive'),
+                autoFrame: !url.searchParams.has('noframe'),
                 debug: url.searchParams.has('debug'),
                 lang: url.searchParams.get('lang'),
                 // the standalone document is the one place the window.* hooks belong
@@ -165,7 +166,7 @@
                 }
 
                 const { options, settings } = window.sse;
-                createViewer({ container: document.body, settings, ...options });
+                const viewer = await createViewer({ container: document.body, settings, ...options });
 
                 ensureGalleryStyles();
                 const nav = document.createElement('div');
@@ -177,6 +178,17 @@
                 back.title = 'Return to the splat collection';
                 back.addEventListener('pointerdown', (e) => e.stopPropagation());
                 nav.append(back);
+
+                const frameBtn = document.createElement('button');
+                frameBtn.className = 'gallery-button';
+                frameBtn.textContent = '⛶ Frame';
+                frameBtn.title = 'Center and frame scene (F)';
+                frameBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+                frameBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    viewer.frameScene();
+                });
+                nav.append(frameBtn);
 
                 const logout = logoutForm();
                 if (logout) nav.append(logout);

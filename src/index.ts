@@ -292,6 +292,7 @@ const resolveConfig = (options: CreateViewerOptions): Config => ({
     colorize: options.colorize ?? false,
     fullload: options.fullload ?? false,
     progressiveLoad: options.progressiveLoad ?? true,
+    autoFrame: options.autoFrame ?? true,
     aa: options.aa ?? false,
     stochastic: options.stochastic ?? false,
     splatSource: options.splatSource ?? 'workbuffer',

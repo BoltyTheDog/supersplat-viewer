@@ -120,7 +120,7 @@ function htmlPlugin() {
                             fringing: { enabled: false, intensity: 0.5 }
                         },
                         animTracks: [],
-                        cameras: [{ initial: { position: [0, 2, 0], target: [2, 2, 0], fov: 85 } }],
+                        cameras: [],
                         annotations: [],
                         startMode: 'default'
                     },
