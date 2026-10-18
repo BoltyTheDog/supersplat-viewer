@@ -40,15 +40,14 @@ function loginPage(next, error = '') {
 <style>html,body{height:100%;margin:0;padding:0;background-color:#171c20;color:#f5f5f5;font-family:Arial,sans-serif;}</style></head>
 <body><main class="splat-gallery login-page"><section class="login-card">
 <div class="gallery-brand">SUPERSPLAT <span>/ VIEWER</span></div>
-<p class="gallery-eyebrow">PRIVATE COLLECTION</p><h1>Welcome back</h1>
-<p class="gallery-subtitle">Sign in to explore the splat collection.</p>
+<h1>Sign in</h1>
 ${error ? `<p class="login-error" role="alert">${escape(error)}</p>` : ''}
 <form method="post" action="/login" class="login-form">
 <input type="hidden" name="next" value="${escape(next)}">
 <label for="username">Username</label><input class="gallery-search" id="username" name="username" autocomplete="username" required maxlength="256" autofocus>
 <label for="password">Password</label><input class="gallery-search" id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024">
-<button class="gallery-button login-submit" type="submit">Sign in →</button>
-</form><p class="gallery-meta">Access is limited to invited visitors.</p>
+<button class="gallery-button login-submit" type="submit">Sign in</button>
+</form>
 </section></main></body></html>`;
 }
 

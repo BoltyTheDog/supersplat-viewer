@@ -57,11 +57,7 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
     header.append(brand, actions);
     const content = element('section', 'gallery-content');
     const intro = element('div', 'gallery-intro');
-    intro.append(
-        element('p', 'gallery-eyebrow', 'GAUSSIAN SPLATS'),
-        element('h1', '', 'Explore the collection'),
-        element('p', 'gallery-subtitle', 'Choose a splat to open it in the SuperSplat Viewer.')
-    );
+    intro.append(element('h1', '', 'Splats'));
     const tools = element('div', 'gallery-tools');
     const search = element('input', 'gallery-search');
     search.type = 'search';
@@ -87,7 +83,7 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
         grid.replaceChildren();
         status.textContent =
             entries.length === 0
-                ? 'No splats yet. Add a folder with a splat file and metadata.json to /splats, then refresh.'
+                ? 'No splats found in /splats.'
                 : matches.length === 0
                   ? 'No splats match your search.'
                   : '';
@@ -109,10 +105,10 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
                 preview.append(image);
             }
             const details = element('div', 'gallery-details');
-            details.append(
-                element('h2', '', entry.title),
-                element('p', 'gallery-description', entry.description || 'Gaussian splat')
-            );
+            details.append(element('h2', '', entry.title));
+            if (entry.description) {
+                details.append(element('p', 'gallery-description', entry.description));
+            }
             const splatCountStr = entry.splatCount
                 ? `${(entry.splatCount / 1_000_000).toFixed(1)}M splats`
                 : null;
@@ -122,9 +118,16 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
             const meta = [entry.author, entry.date, splatCountStr, bytesStr]
                 .filter(Boolean)
                 .join(' · ');
-            details.append(element('p', 'gallery-meta', meta));
-            if (entry.tags.length) details.append(element('p', 'gallery-tags', entry.tags.join(' / ')));
-            details.append(element('span', 'gallery-open', 'Open splat →'));
+            if (meta) {
+                details.append(element('p', 'gallery-meta', meta));
+            }
+            if (entry.tags.length) {
+                const tags = element('div', 'gallery-tags');
+                for (const t of entry.tags) {
+                    tags.append(element('span', 'gallery-tag', t));
+                }
+                details.append(tags);
+            }
             card.append(preview, details);
             grid.append(card);
         }
