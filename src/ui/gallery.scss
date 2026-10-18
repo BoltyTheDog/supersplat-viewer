@@ -6,8 +6,18 @@ $clr-icon-hilight: #ffaf50;
 $text-primary: #f5f5f5;
 $text-secondary: #8c9ba5;
 
-.splat-gallery {
+html,
+body {
     height: 100%;
+    margin: 0;
+    padding: 0;
+    background: $bcg-darkest;
+    color: $text-primary;
+}
+
+.splat-gallery {
+    min-height: 100%;
+    box-sizing: border-box;
     overflow: auto;
     background: $bcg-darkest;
     color: $text-primary;
@@ -182,17 +192,24 @@ $text-secondary: #8c9ba5;
     z-index: 100;
 }
 .login-page {
-    display: grid;
-    place-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 24px;
+    background: $bcg-darkest;
+    box-sizing: border-box;
 }
 .login-card {
     width: 100%;
     max-width: 420px;
     padding: 36px;
     border: 1px solid $bcg-lighter;
-    border-radius: 6px;
+    border-radius: 8px;
     background: $bcg-darker;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
     .gallery-brand {
         margin-bottom: 36px;
     }
@@ -208,6 +225,25 @@ $text-secondary: #8c9ba5;
     label {
         font-size: 13px;
         color: $text-secondary;
+    }
+    .gallery-search {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        font-size: 14px;
+        background: $bcg-darker;
+        color: $text-primary;
+        &:focus {
+            border-color: $clr-hilight;
+        }
+        &:-webkit-autofill,
+        &:-webkit-autofill:hover,
+        &:-webkit-autofill:focus {
+            -webkit-text-fill-color: $text-primary;
+            -webkit-box-shadow: 0 0 0px 1000px $bcg-darker inset;
+            box-shadow: 0 0 0px 1000px $bcg-darker inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
     }
 }
 .login-submit {

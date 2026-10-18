@@ -36,7 +36,8 @@ export function returnPath(value) {
 function loginPage(next, error = '') {
     return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sign in | SuperSplat Viewer</title><link rel="stylesheet" href="/index.css"><link rel="stylesheet" href="/gallery.css"><link rel="icon" href="/static/icons/logo-192.png"></head>
+<title>Sign in | SuperSplat Viewer</title><link rel="stylesheet" href="/index.css"><link rel="stylesheet" href="/gallery.css"><link rel="icon" href="/static/icons/logo-192.png">
+<style>html,body{height:100%;margin:0;padding:0;background-color:#171c20;color:#f5f5f5;font-family:Arial,sans-serif;}</style></head>
 <body><main class="splat-gallery login-page"><section class="login-card">
 <div class="gallery-brand">SUPERSPLAT <span>/ VIEWER</span></div>
 <p class="gallery-eyebrow">PRIVATE COLLECTION</p><h1>Welcome back</h1>
