@@ -60,6 +60,8 @@ type ViewerFlags = {
     colorize?: boolean;
     /** Load all streaming LOD data before the first frame. */
     fullload?: boolean;
+    /** Stream splats progressively from the center outward. Defaults to true. */
+    progressiveLoad?: boolean;
     /** Render with antialiasing. */
     aa?: boolean;
     /**

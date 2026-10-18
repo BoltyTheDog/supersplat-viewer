@@ -142,10 +142,43 @@ const buildCss = {
     ]
 };
 
+const buildGalleryCss = {
+    input: 'src/ui/gallery.scss',
+    output: {
+        dir: 'public'
+    },
+    plugins: [
+        scss({
+            exclude: ['static/**/*'],
+            fileName: 'gallery.css',
+            sourceMap: false,
+            runtime: sass,
+            processor: (css) => {
+                return postcss([autoprefixer])
+                    .process(css, { from: undefined })
+                    .then((result) => result.css);
+            }
+        }),
+        {
+            name: 'suppress-empty-chunks',
+            generateBundle(options, bundle) {
+                for (const [fileName, chunk] of Object.entries(bundle)) {
+                    if (chunk.type === 'chunk' && chunk.code.trim() === '') {
+                        delete bundle[fileName];
+                    }
+                }
+            }
+        }
+    ]
+};
+
 const debugEngine = process.env.ENGINE === 'debug';
 
 const buildPublic = {
-    input: 'src/index.ts',
+    input: {
+        index: 'src/index.ts',
+        gallery: 'src/gallery.ts'
+    },
     output: {
         dir: 'public',
         format: 'esm',
@@ -247,6 +280,7 @@ const buildSettingsTypes = {
 
 export default [
     buildCss,
+    buildGalleryCss,
     buildPublic,
     buildDist,
     buildViewer,

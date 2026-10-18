@@ -54,6 +54,7 @@
             const collisionUrl =
                 url.searchParams.get('collision') ?? url.searchParams.get('voxel') ?? bootstrap.collisionUrl ?? null;
             const settingsUrl = url.searchParams.get('settings') ?? bootstrap.settingsUrl ?? './settings.json';
+            const hasExplicitContent = url.searchParams.has('content') || Boolean(bootstrap.contentUrl);
             const contentUrl = url.searchParams.get('content') ?? bootstrap.contentUrl ?? './scene.compressed.ply';
 
             // Names the bootstrap's contentUrl when the url itself has no usable name (a data:
@@ -71,7 +72,7 @@
             // parser consumes it, so they keep the head start. `isPrefetchable` in src/index.ts
             // applies the same rule for embedders that do not pass `contents`.
             const contentName = contentFilename ?? new URL(contentUrl, location.href).pathname.split('/').pop() ?? '';
-            const prefetchContent = contentName.toLowerCase() !== 'lod-meta.json';
+            const prefetchContent = hasExplicitContent && contentName.toLowerCase() !== 'lod-meta.json';
 
             // createViewer's options, minus the container and the settings. The poster image and
             // the content fetch start here, before the module bundle has arrived.
@@ -100,6 +101,7 @@
                 budget,
                 heatmap: url.searchParams.has('heatmap'),
                 fullload: url.searchParams.has('fullload'),
+                progressiveLoad: !url.searchParams.has('noprogresive'),
                 debug: url.searchParams.has('debug'),
                 lang: url.searchParams.get('lang'),
                 // the standalone document is the one place the window.* hooks belong
@@ -108,6 +110,7 @@
 
             window.sse = {
                 options: sseOptions,
+                bootstrapContent: Boolean(bootstrap.contentUrl),
                 settings: bootstrap.settings ?? fetch(settingsUrl).then((response) => response.json())
             };
         </script>
@@ -116,12 +119,65 @@
         <!-- Application Script -->
         <script type="module">
             import { createViewer } from './index.js';
+            import { initAuth, logoutForm, startGallery, galleryUrl, ensureGalleryStyles } from './gallery.js';
 
-            const { options, settings } = window.sse;
+            const start = async () => {
+                const authenticated = await initAuth();
+                if (!authenticated) return;
 
-            // the viewer builds its own subtree (canvas, ui, icons) inside the container; the
-            // standalone document's container is the page itself
-            createViewer({ container: document.body, settings, ...options });
+                const url = new URL(location.href);
+                const isViewing =
+                    url.searchParams.has('content') ||
+                    url.searchParams.has('splat') ||
+                    Boolean(window.sse?.bootstrapContent);
+
+                if (!isViewing) {
+                    await startGallery(async (splatUrl) => {
+                        const target = galleryUrl();
+                        if (splatUrl) target.searchParams.set('content', splatUrl);
+                        location.assign(target.href);
+                    });
+                    return;
+                }
+
+                // If loading by splat id (?splat=name) without content parameter, resolve its url first
+                if (url.searchParams.has('splat') && !url.searchParams.has('content')) {
+                    try {
+                        const res = await fetch('/api/splats', { cache: 'no-store' });
+                        if (res.ok) {
+                            const splats = await res.json();
+                            const entry = splats.find((s) => s.id === url.searchParams.get('splat'));
+                            if (entry) {
+                                window.sse.options.contentUrl = entry.url;
+                                window.sse.options.contents = fetch(entry.url);
+                                document.title = `${entry.title} | SuperSplat Viewer`;
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Could not resolve splat entry:', err);
+                    }
+                }
+
+                const { options, settings } = window.sse;
+                createViewer({ container: document.body, settings, ...options });
+
+                ensureGalleryStyles();
+                const nav = document.createElement('div');
+                nav.className = 'editor-gallery-navigation gallery-actions';
+                const back = document.createElement('a');
+                back.className = 'gallery-button editor-gallery-back';
+                back.href = galleryUrl().href;
+                back.textContent = '← Back to splats';
+                back.title = 'Return to the splat collection';
+                back.addEventListener('pointerdown', (e) => e.stopPropagation());
+                nav.append(back);
+
+                const logout = logoutForm();
+                if (logout) nav.append(logout);
+                document.body.append(nav);
+            };
+
+            start().catch(console.error);
         </script>
     </body>
 </html>

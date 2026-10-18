@@ -7,3 +7,8 @@ public
 docs/bench
 docs/pick-depth.md
 docs/stochastic-renderer.md
+.env
+.env.*
+!.env.example
+splats/*
+!splats/.gitkeep
