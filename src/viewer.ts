@@ -598,7 +598,7 @@ class Viewer {
             applyCamera(this.cameraManager.camera);
 
             if (config.ui) {
-                this.navCursor = new NavCursor(app, camera, null, events, state, config.reticle);
+                this.navCursor = new NavCursor(app, camera, null, this.picker, events, state, config.reticle);
             }
 
             // hasCollision = collision data exists (drives fly-mode collision
