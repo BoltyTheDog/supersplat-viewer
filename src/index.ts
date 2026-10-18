@@ -20,7 +20,7 @@ import { observe } from './core/observe';
 import { initLocalization } from './localization';
 import type { CreateViewerOptions } from './options';
 import { persistPreferences, readPreferences } from './preferences';
-import { importSettings } from './settings';
+import { defaultSettings, importSettings } from './settings';
 import type { Config, Global, State, ViewerHandle } from './types';
 import { initPoster, initUI } from './ui';
 import uiHtml from './ui.html';
@@ -332,8 +332,29 @@ const createViewer = async (options: CreateViewerOptions): Promise<ViewerHandle>
     }
 
     // resolve settings after showing the poster, including a fetch started by the document
-    const settingsJson =
-        typeof options.settings === 'string' ? await (await fetch(options.settings)).json() : await options.settings;
+    let settingsJson: unknown;
+    try {
+        settingsJson =
+            typeof options.settings === 'string'
+                ? await fetch(options.settings)
+                      .then((r): Promise<unknown> => (r.ok ? (r.json() as Promise<unknown>) : Promise.resolve(null)))
+                      .catch((): null => null)
+                : await Promise.resolve(options.settings).catch((): null => null);
+    } catch {
+        settingsJson = null;
+    }
+
+    let parsedSettings;
+    if (settingsJson && typeof settingsJson === 'object') {
+        try {
+            parsedSettings = importSettings(settingsJson);
+        } catch (err) {
+            console.warn('Could not parse experience settings, falling back to defaults:', err);
+            parsedSettings = defaultSettings();
+        }
+    } else {
+        parsedSettings = defaultSettings();
+    }
 
     const preferences = readPreferences(platform.mobile);
 
@@ -375,7 +396,7 @@ const createViewer = async (options: CreateViewerOptions): Promise<ViewerHandle>
 
     const global: Global = {
         app,
-        settings: importSettings(settingsJson),
+        settings: parsedSettings,
         config,
         state,
         events,

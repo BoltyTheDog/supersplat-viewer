@@ -10,6 +10,7 @@ type GalleryEntry = {
     tags: string[];
     url: string;
     thumbnail?: string;
+    settingsUrl?: string;
     bytes: number;
 };
 
@@ -94,6 +95,7 @@ const startGallery = async (open: (url?: string) => Promise<void> | void) => {
             const url = galleryUrl();
             url.searchParams.set('splat', entry.id);
             url.searchParams.set('content', entry.url);
+            if (entry.settingsUrl) url.searchParams.set('settings', entry.settingsUrl);
             card.href = url.href;
             const preview = element('div', 'gallery-preview');
             preview.append(element('span', 'gallery-placeholder', '◈'));

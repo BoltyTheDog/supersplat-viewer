@@ -31,12 +31,17 @@ test('gallery discovers uploads and safely streams files', async (t) => {
     await mkdir(folder);
     await writeFile(join(folder, 'room #1.ply'), '0123456789');
     await writeFile(join(folder, 'preview.jpg'), 'image');
+    await writeFile(join(folder, 'settings.json'), JSON.stringify({ version: 2 }));
     await writeFile(join(folder, 'metadata.json'), JSON.stringify({ title: 'My room', description: '<script>not markup</script>', thumbnail: 'preview.jpg', tags: ['inside', 42], author: 'Bolty' }));
     const entries = await (await get('/api/splats')).json();
     assert.equal(entries.length, 1);
     assert.equal(entries[0].title, 'My room');
     assert.equal(entries[0].bytes, 10);
     assert.deepEqual(entries[0].tags, ['inside']);
+    assert.equal(entries[0].settingsUrl, '/splats/my%20room/settings.json');
+    const defaultSettingsRes = await get('/settings.json');
+    assert.equal(defaultSettingsRes.status, 200);
+    assert.equal((await defaultSettingsRes.json()).version, 2);
     assert.equal(entries[0].url, '/splats/my%20room/room%20%231.ply');
     assert.equal(await (await get(entries[0].url)).text(), '0123456789');
     const range = await get(entries[0].url, { headers: { Range: 'bytes=2-5' } });

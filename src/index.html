@@ -111,7 +111,8 @@
             window.sse = {
                 options: sseOptions,
                 bootstrapContent: Boolean(bootstrap.contentUrl),
-                settings: bootstrap.settings ?? fetch(settingsUrl).then((response) => response.json())
+                // prettier-ignore
+                settings: bootstrap.settings ?? fetch(settingsUrl).then((response) => (response.ok ? response.json() : null)).catch(() => null)
             };
         </script>
     </head>
@@ -150,6 +151,11 @@
                             if (entry) {
                                 window.sse.options.contentUrl = entry.url;
                                 window.sse.options.contents = fetch(entry.url);
+                                if (entry.settingsUrl) {
+                                    window.sse.settings = fetch(entry.settingsUrl)
+                                        .then((r) => (r.ok ? r.json() : null))
+                                        .catch(() => null);
+                                }
                                 document.title = `${entry.title} | SuperSplat Viewer`;
                             }
                         }

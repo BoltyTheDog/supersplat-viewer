@@ -73,6 +73,11 @@ export async function listSplats(base) {
                 await safePath(folder, metadata.thumbnail);
                 thumbnail = url(metadata.thumbnail);
             }
+            let settingsUrl;
+            if (files.some(f => f.isFile() && f.name.toLowerCase() === 'settings.json')) {
+                await safePath(folder, 'settings.json');
+                settingsUrl = url('settings.json');
+            }
             return {
                 id: dir.name,
                 title: typeof metadata.title === 'string' ? metadata.title : dir.name,
@@ -80,7 +85,7 @@ export async function listSplats(base) {
                 author: typeof metadata.author === 'string' ? metadata.author : '',
                 date: typeof metadata.date === 'string' ? metadata.date : '',
                 tags: Array.isArray(metadata.tags) ? metadata.tags.filter(t => typeof t === 'string') : [],
-                url: url(file), thumbnail, bytes: info.size
+                url: url(file), thumbnail, settingsUrl, bytes: info.size
             };
         } catch (err) {
             console.warn(`Skipping splat ${dir.name}: ${err.message}`);
@@ -89,6 +94,24 @@ export async function listSplats(base) {
     }));
     return entries.filter(Boolean).sort((a, b) => a.title.localeCompare(b.title));
 }
+
+const defaultSettingsJson = JSON.stringify({
+    version: 2,
+    tonemapping: 'linear',
+    highPrecisionRendering: false,
+    background: { color: [0, 0, 0] },
+    postEffectSettings: {
+        sharpness: { enabled: false, amount: 0 },
+        bloom: { enabled: false, intensity: 0.1, blurLevel: 2 },
+        grading: { enabled: false, brightness: 1, contrast: 1, saturation: 1, tint: [1, 1, 1] },
+        vignette: { enabled: false, intensity: 0.5, inner: 0.3, outer: 0.75, curvature: 1 },
+        fringing: { enabled: false, intensity: 0.5 }
+    },
+    animTracks: [],
+    cameras: [{ initial: { position: [0, 2, 0], target: [2, 2, 0], fov: 85 } }],
+    annotations: [],
+    startMode: 'default'
+});
 
 export function galleryServer({ dist = defaultDist, splats = process.env.SPLATS_DIR || resolve(root, 'splats'), auth = authConfig() } = {}) {
     const authentication = createAuth(auth);
@@ -118,6 +141,11 @@ export function galleryServer({ dist = defaultDist, splats = process.env.SPLATS_
             const name = isSplat ? path.slice(8) : path === '/' ? 'index.html' : path.slice(1);
             if (name.split('/').some(part => part.startsWith('.')) || name.includes('\\') || name.includes('\0')) {
                 res.writeHead(404).end();
+                return;
+            }
+            if (!isSplat && name === 'settings.json' && !existsSync(resolve(dist, 'settings.json'))) {
+                res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+                res.end(req.method === 'HEAD' ? undefined : defaultSettingsJson);
                 return;
             }
             const file = await safePath(isSplat ? splats : dist, name);
